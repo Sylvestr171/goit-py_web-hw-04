@@ -59,16 +59,21 @@ class HttpHandler(BaseHTTPRequestHandler):
 
 def run_server_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setblocking(False)
     server = ('localhost', 5000)
     sock.bind(server)
     logging.info('Server_socket is active on: %s', server)
     try:
         while True:
-            data, address = sock.recvfrom(1024)
-            logging.info('Received data: %s from: %s', data.decode(), address)
-            json_data = data.decode('utf-8')
-            print(json_data)
-            save_to_file(json_data)
+            try:
+                data, address = sock.recvfrom(1024)
+                logging.info('Received data: %s from: %s', data.decode(), address)
+                json_data = data.decode()
+                print(json_data)
+                save_to_file(json_data)
+            except BlockingIOError:
+                sleep(0.1)
+                continue
     except KeyboardInterrupt:
         print(f'Destroy server')
     finally:
@@ -76,14 +81,17 @@ def run_server_socket():
 
 def save_to_file(data_for_save, path_to_save = './front-init/storage/data.json'):
     file_for_saving = pathlib.Path(path_to_save)
-    with open (file_for_saving, "w", encoding="utf-8") as f:
+    with open (file_for_saving, "a") as f:
         json.dump(data_for_save, f, indent=4)
         f.write('\n')
+        f.close()
     logging.info('Save data: %s to file', data_for_save)
+    print (":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
 
 def run_client_socket(message):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setblocking(False)
     server = ('localhost', 5000)
     json_data = json.dumps(message)
     data = json_data.encode('utf-8')
