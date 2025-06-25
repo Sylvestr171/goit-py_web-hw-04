@@ -2,6 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.parse
 import mimetypes
 import pathlib
+from datetime import datetime
 
 
 class HttpHandler(BaseHTTPRequestHandler):
@@ -27,7 +28,6 @@ class HttpHandler(BaseHTTPRequestHandler):
     def send_static(self):
         self.send_response(200)
         mt = mimetypes.guess_type(self.path)
-       
         if mt:
             self.send_header("Content-type", mt[0])
         else:
@@ -35,6 +35,17 @@ class HttpHandler(BaseHTTPRequestHandler):
         self.end_headers()
         with open(f'.{self.path}', 'rb') as file:
             self.wfile.write(file.read())
+
+    def do_POST(self):
+        data = self.rfile.read(int(self.headers['Content-Length']))
+        message_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
+        data_parse = urllib.parse.unquote_plus(data.decode())
+        data_dict = {key: value for key, value in [el.split('=') for el in data_parse.split('&')]}
+        message_dict ={message_time: data_dict}
+        print (message_dict)
+        self.send_response(302)
+        self.send_header('Location', '/')
+        self.end_headers()
 
 
 def run(server_class=HTTPServer, handler_class=HttpHandler):
