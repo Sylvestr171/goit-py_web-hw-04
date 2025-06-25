@@ -1,14 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.parse
-import mimetypes
-import pathlib
+import urllib.parse, mimetypes, pathlib, logging, socket, threading, json, colorama
 from datetime import datetime
-import logging
-import socket
-from time import sleep
-import threading
-import json
-
 
 class HttpHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -26,10 +18,11 @@ class HttpHandler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         data = self.rfile.read(int(self.headers['Content-Length']))
-        message_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
+        message_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
         data_parse = urllib.parse.unquote_plus(data.decode())
         data_dict = {key: value for key, value in [el.split('=') for el in data_parse.split('&')]}
         message_dict ={message_time: data_dict}
+        print("do_POST -> message_dict", colorama.Fore.RED, message_dict, colorama.Fore.RESET)
         logging.info("Message: %s", message_dict)
         self.send_response(302)
         self.send_header('Location', '/')
@@ -56,49 +49,49 @@ class HttpHandler(BaseHTTPRequestHandler):
         with open(f'.{self.path}', 'rb') as file:
             self.wfile.write(file.read())
 
-
 def run_server_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setblocking(False)
     server = ('localhost', 5000)
     sock.bind(server)
     logging.info('Server_socket is active on: %s', server)
-    try:
-        while True:
-            try:
-                data, address = sock.recvfrom(1024)
-                logging.info('Received data: %s from: %s', data.decode(), address)
-                json_data = data.decode()
-                print(json_data)
-                save_to_file(json_data)
-            except BlockingIOError:
-                sleep(0.1)
-                continue
-    except KeyboardInterrupt:
-        print(f'Destroy server')
-    finally:
-        sock.close()
+    while True:
+        try:
+            data, address = sock.recvfrom(1024)
+            logging.info('Received data: %s from: %s', data.decode(), address)
+            print("run_server_socket -> data", colorama.Fore.RED, data, colorama.Fore.RESET)
+            json_data = data.decode()
+            print("run_server_socket -> json_data", colorama.Fore.RED, json_data, colorama.Fore.RESET)
+            print(json_data)
+            save_to_file(json_data)
+        except BlockingIOError:
+            continue
 
 def save_to_file(data_for_save, path_to_save = './front-init/storage/data.json'):
+    print("save_to_file -> data_for_save", colorama.Fore.RED, data_for_save, colorama.Fore.RESET)
     file_for_saving = pathlib.Path(path_to_save)
-    with open (file_for_saving, "a") as f:
-        json.dump(data_for_save, f, indent=4)
-        f.write('\n')
+    with open (file_for_saving, "a", encoding='utf-8') as f:
+        f.write(data_for_save + "\n")
         f.close()
     logging.info('Save data: %s to file', data_for_save)
-    print (":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
 
 def run_client_socket(message):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setblocking(False)
     server = ('localhost', 5000)
-    json_data = json.dumps(message)
-    data = json_data.encode('utf-8')
-    sock.sendto(data, server)
-    logging.info('Send data: %s to server: %s', data.decode(), server)
-    response, address = sock.recvfrom(1024)
-    logging.info('Response data: %s from address: %s', response.decode(), address)
+    json_data = json.dumps(message, indent=4, ensure_ascii=False)
+    print("run_client_socket -> message", colorama.Fore.RED, message, colorama.Fore.RESET)
+    print("run_client_socket -> json_data", colorama.Fore.RED, json_data, colorama.Fore.RESET)
+    data = json_data.encode()
+    print("run_client_socket -> data", colorama.Fore.RED, data, colorama.Fore.RESET)
+    try:
+        sock.sendto(data, server)
+        logging.info('Send data: %s to server: %s', data.decode(), server)
+        response, address = sock.recvfrom(1024)
+        logging.info('Response data: %s from address: %s', response.decode(), address)
+    except BlockingIOError:
+            logging.info('BlockingIOError for run_client_socket')
     sock.close()
 
 
@@ -117,14 +110,9 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(threadName)s %(message)s")
     web = threading.Thread(target=run, args=())
     server = threading.Thread(target=run_server_socket, args=())
-    # client = threading.Thread(target=run_client, args=())
 
     server.start()
     web.start()
     
-    # client.start()
     server.join()
     web.join()
-    
-    # client.join()
-    print('Done!')
