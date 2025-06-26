@@ -1,0 +1,12 @@
+version: '28.1.1'
+services:
+  app:
+    build: .
+    container_name: web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./front-init/storage/data.json:/app/front-init/storage/data.json
+    environment:
+      - APP_HOME=/app
+    command: python main.py

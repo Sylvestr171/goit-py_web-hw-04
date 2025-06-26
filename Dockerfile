@@ -8,8 +8,6 @@ ENV APP_HOME /app
 # Встановимо робочу директорію всередині контейнера
 WORKDIR $APP_HOME
 
-# приєднаємо ./front-init/storage як розділ
-VOLUME [ "./front-init/storage" ]
 # Скопіюємо інші файли в робочу директорію контейнера
 COPY . .
 
