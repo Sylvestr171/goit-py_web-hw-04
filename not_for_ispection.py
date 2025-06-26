@@ -4,7 +4,14 @@ from pathlib import Path
 from logging import info, basicConfig, DEBUG
 from threading import Thread
 from datetime import datetime
-from flask import Flask, render_template, send_from_directory, request, redirect, jsonify
+from flask import (
+    Flask,
+    render_template,
+    send_from_directory,
+    request,
+    redirect,
+    jsonify,
+)
 import requests
 from time import sleep
 
@@ -16,13 +23,16 @@ last_message = {}
 
 app = Flask(__name__, static_folder="front-init", template_folder="front-init")
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 @app.route("/message.html")
 def message():
     return render_template("message.html")
+
 
 @app.route("/<path:filename>")
 def static_files(filename):
@@ -31,6 +41,7 @@ def static_files(filename):
         return send_from_directory("front-init", filename)
     else:
         return render_template("error.html"), 404
+
 
 @app.route("/message", methods=["POST"])
 def message_post():
@@ -43,6 +54,7 @@ def message_post():
     last_message = data_dict_with_time
 
     return redirect("/")
+
 
 @app.route("/api/data")
 def api_data():
@@ -81,10 +93,12 @@ def reception_data():
                 info("Статус прийому: %s", response.status_code)
         except requests.exceptions.RequestException as e:
             info("Помилка прийому: %s", e)
-        sleep(5) 
+        sleep(5)
 
 
 if __name__ == "__main__":
-    reception_thread = Thread(target=reception_data, daemon=True, name="ReceptionThread")
+    reception_thread = Thread(
+        target=reception_data, daemon=True, name="ReceptionThread"
+    )
     reception_thread.start()
     app.run(port=3000, debug=True, use_reloader=False)
