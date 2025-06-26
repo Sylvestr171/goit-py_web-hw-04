@@ -79,7 +79,7 @@ def run_server_socket() -> None:
 
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.setblocking(False)
-    server_socket_ip_port = ("localhost", 5000)
+    server_socket_ip_port = ("0.0.0.0", 5000)
     sock.bind(server_socket_ip_port)
     info("Server_socket is active on: %s", server_socket_ip_port)
     while True:
@@ -114,7 +114,7 @@ def run_client_socket(message: dict[str, dict[str, str]]):
 
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.setblocking(False)
-    client_socket_ip_port = ("localhost", 5000)
+    client_socket_ip_port = ("0.0.0.0", 5000)
     json_data = dumps(message, indent=4, ensure_ascii=False)
     data = json_data.encode()
     try:
@@ -134,7 +134,7 @@ def run(
     """Запуск Веб-сервер"""
 
     info("Start Server")
-    server_address = ("localhost", 3000)
+    server_address = ("0.0.0.0", 3000)
     http = server_class(server_address, handler_class)
     try:
         http.serve_forever()
